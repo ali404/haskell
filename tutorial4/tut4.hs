@@ -3,7 +3,7 @@
 --
 -- Due: the tutorial of week 6 (22/23 Oct)
 
-import Data.List (nub)
+import Data.List (nub, transpose)
 import Data.Char
 import Test.QuickCheck
 import Network.HTTP (simpleHTTP,getRequest,getResponseBody)
@@ -98,7 +98,7 @@ prefix c1 c2 = sameString c1 $ take (length c1) c2
 
 --WTF is this?! apparently they use toLower and toUpper
 --to chars, when in the pdf is stated that these functions
---have weird outputs for weird inputs...OMG
+--have weird outputs for weird inputs (like miu, or \237)...OMG
 prop_prefix_pos :: String -> Int -> Bool
 prop_prefix_pos str n =  prefix substr (map toLower str) &&
 		         prefix substr (map toUpper str)
@@ -195,36 +195,57 @@ testEmailsFromHTML  =  emailsFromHTML testHTML == testAddrBook
 
 -- 10.
 findEmail :: Name -> [(Name, Email)] -> [(Name, Email)]
-findEmail = undefined
+findEmail _ [] = []
+findEmail requiredName (first:list)
+    | contains (fst first) requiredName = [first]
+    | otherwise = findEmail requiredName list
 
 
 -- 11.
 emailsByNameFromHTML :: HTML -> Name -> [(Name,Email)]
-emailsByNameFromHTML = undefined
+emailsByNameFromHTML html requiredName =
+            html
+            |> emailsFromHTML
+            |> findEmail requiredName
 
 
 -- Optional Material
 
 -- 12.
 hasInitials :: String -> Name -> Bool
-hasInitials = undefined
+hasInitials initials name = sameString initials $ head $ transpose $ split " " name
 
 -- 13.
 emailsByMatchFromHTML :: (Name -> Bool) -> HTML -> [(Name, Email)]
-emailsByMatchFromHTML = undefined
+emailsByMatchFromHTML restriction html =
+                html
+                |> emailsFromHTML
+                |> filter (\x -> restriction $ fst x)
 
 emailsByInitialsFromHTML :: String -> HTML -> [(Name, Email)]
-emailsByInitialsFromHTML = undefined
+emailsByInitialsFromHTML initials html =  emailsByMatchFromHTML (hasInitials initials) html
 
 -- 14.
 
 -- If your criteria use parameters (like hasInitials), change the type signature.
-myCriteria :: Name -> Bool
-myCriteria = undefined
+myCriteria :: String -> Name -> Bool
+myCriteria _ [] = True
+myCriteria [] _ = False
+myCriteria (first:fullName) initials
+    | sameChar first $ head initials = myCriteria fullName $ tail initials
+    | otherwise = myCriteria fullName initials
 
 emailsByMyCriteriaFromHTML :: HTML -> [(Name, Email)]
-emailsByMyCriteriaFromHTML = undefined
+emailsByMyCriteriaFromHTML html = emailsByMatchFromHTML (myCriteria "DS") html
 
 -- 15
+splitName :: String -> String
+splitName s = foldl (++) "" (tail splittedString) ++ ", " ++ head splittedString
+    where splittedString = split " " s
+
+findLongestString :: [(String, String)] -> Int
+findLongestString xs = foldl (\curr x -> if(curr > x) then curr else x ) 0 $ map (\x -> length $ fst x) xs
+
 ppAddrBook :: [(Name, Email)] -> String
-ppAddrBook addr = unlines [ name ++ ": " ++ email | (name,email) <- addr ]
+ppAddrBook emails = unlines $ map (\email -> (splitName $ fst email) ++ replicate (highestLength - (length $ fst email) + 5) ' ' ++ snd email) emails
+    where highestLength = findLongestString emails
