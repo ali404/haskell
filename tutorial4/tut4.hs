@@ -70,20 +70,20 @@ emailsByNameFromURL url name =
 -- <exercises>
 
 -- 1.
-isSmallDigit :: Char -> Bool
-isSmallDigit c1
+isSmallChar :: Char -> Bool
+isSmallChar c1
     | ord c1 >= 97 && ord c1 <= 122 = True
     | otherwise = False
 
-isBigDigit :: Char -> Bool
-isBigDigit c1
+isBigChar :: Char -> Bool
+isBigChar c1
     | ord c1 >= 65 && ord c1 <= 90 = True
     | otherwise = False
 
 sameChar :: Char -> Char -> Bool
 sameChar  c1 c2
-    | isSmallDigit c1 && isBigDigit c2 = c1 == chr (ord c2 + 32)
-    | isBigDigit c1 && isSmallDigit c2 = chr (ord c1 + 32) == c2
+    | isSmallChar c1 && isBigChar c2 = c1 == chr (ord c2 + 32)
+    | isBigChar c1 && isSmallChar c2 = chr (ord c1 + 32) == c2
     | otherwise = c1 == c2
 
 sameString :: String -> String -> Bool
@@ -91,14 +91,15 @@ sameString s1 s2
     | length s1 /= length s2 = False
     | otherwise = foldl (&&) True $ map (\x -> sameChar (fst x)  (snd x)) ss
                 where ss = zip s1 s2
+
+-- sameString :: String -> String -> Bool
+-- sameString s1 s2 = map toUpper s1 == map toUpper s2
+
 -- 2.
 prefix :: String -> String -> Bool
-prefix c1 c2 = sameString c1 $ take (length c1) c2
+prefix substr str = sameString substr $ take (length substr) str
 
 
---WTF is this?! apparently they use toLower and toUpper
---to chars, when in the pdf is stated that these functions
---have weird outputs for weird inputs (like miu, or \237)...OMG
 prop_prefix_pos :: String -> Int -> Bool
 prop_prefix_pos str n =  prefix substr (map toLower str) &&
 		         prefix substr (map toUpper str)
@@ -108,12 +109,11 @@ prop_prefix_pos str n =  prefix substr (map toLower str) &&
 prop_prefix_neg :: String -> Int -> Bool
 prop_prefix_neg str n = sameString str substr || (not $ prefix str substr)
                           where substr = take n str
---this quickCheck is stupid
 
 -- 3.
 contains :: String -> String -> Bool
-contains c1 c2 = foldl (||) False
-                        $ map (\x -> prefix c2 $ drop x c1) [0..length c1]
+contains str substr = foldl (||) False
+                        $ map (\x -> prefix substr $ drop x str) [0..length str]
 
 prop_contains :: String -> Int -> Int -> Bool
 prop_contains = undefined
@@ -122,18 +122,18 @@ prop_contains = undefined
 -- 4.
 getFirstOccurance' :: String -> String -> Int
 getFirstOccurance' _ [] = 0
-getFirstOccurance' c1 c2
-    | prefix c1 c2 = length c2
-    | otherwise = getFirstOccurance' c1 (tail c2)
+getFirstOccurance' substr str
+    | prefix substr str = length str
+    | otherwise = getFirstOccurance' substr (tail str)
 
 getFirstOccurance :: String -> String -> Int
-getFirstOccurance c1 c2 = length c2 - getFirstOccurance' c1 c2
+getFirstOccurance substr str = length str - getFirstOccurance' substr str
 
 takeUntil :: String -> String -> String
-takeUntil c1 c2 = take (getFirstOccurance c1 c2) c2
+takeUntil substr str = take (getFirstOccurance substr str) str
 
 dropUntil :: String -> String -> String
-dropUntil c1 c2 = drop ((getFirstOccurance c1 c2) + length c1) c2
+dropUntil substr str = drop ((getFirstOccurance substr str) + length substr) str
 
 -- 5.
 split :: String -> String -> [String]
@@ -244,8 +244,13 @@ splitName s = foldl (++) "" (tail splittedString) ++ ", " ++ head splittedString
     where splittedString = split " " s
 
 findLongestString :: [(String, String)] -> Int
-findLongestString xs = foldl (\curr x -> if(curr > x) then curr else x ) 0 $ map (\x -> length $ fst x) xs
+findLongestString xs = maximum $ map (\x -> length $ fst x) xs
 
 ppAddrBook :: [(Name, Email)] -> String
 ppAddrBook emails = unlines $ map (\email -> (splitName $ fst email) ++ replicate (highestLength - (length $ fst email) + 5) ' ' ++ snd email) emails
     where highestLength = findLongestString emails
+
+
+--John Hughes, design of a pretty printing library
+--Dereck Ome (?!)
+--Philip Wadler , a prettier printer
