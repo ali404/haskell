@@ -41,13 +41,20 @@ isBloodOrange (Orange "Sanguinello" _) = True
 isBloodOrange _ = False
 
 -- 2.
+segments :: Fruit -> Int
+segments (Orange _ n) = n
+segments _ = 0
+
 bloodOrangeSegments :: [Fruit] -> Int
-bloodOrangeSegments (Orange _ x):fruits = x + bloodOrangeSegments fruits
-bloodOrangeSegments _:fruits = bloodOrangeSegments fruits
+bloodOrangeSegments fruits = sum [segments fruit| fruit <- fruits]
 
 -- 3.
+numOfWorms :: Fruit -> Int
+numOfWorms (Apple _ True) = 1
+numOfWorms _ = 0
+
 worms :: [Fruit] -> Int
-worms = undefined
+worms fruits = sum [numOfWorms fruit | fruit <- fruits]
 
 -- Implementing propositional logic in Haskell
 -- The datatype 'Prop'
@@ -59,6 +66,8 @@ data Prop = Var Name
           | Not Prop
           | Prop :|: Prop
           | Prop :&: Prop
+          | Prop :->: Prop
+          | Prop :<->: Prop
           deriving (Eq, Ord)
 
 type Names = [Name]
@@ -75,6 +84,8 @@ showProp (T)            =  "T"
 showProp (Not p)        =  "(~" ++ showProp p ++ ")"
 showProp (p :|: q)      =  "(" ++ showProp p ++ "|" ++ showProp q ++ ")"
 showProp (p :&: q)      =  "(" ++ showProp p ++ "&" ++ showProp q ++ ")"
+showProp (p :->: q) = "(" ++ showProp p ++ "->" ++ showProp q ++ ")"
+showProp (p :<->: q) = "(" ++ showProp p ++ "<->" ++ showProp q ++ ")"
 
 -- evaluates a proposition in a given environment
 eval :: Env -> Prop -> Bool
@@ -84,6 +95,8 @@ eval e (T)            =  True
 eval e (Not p)        =  not (eval e p)
 eval e (p :|: q)      =  eval e p || eval e q
 eval e (p :&: q)      =  eval e p && eval e q
+eval e (p :->: q) = not (eval e p && not (eval e q))
+eval e (p :<->: q) = eval e (p :->: q) && eval e (q :->: p)
 
 -- retrieves the names of variables from a proposition -
 --  NOTE: variable names in the result must be unique
@@ -94,6 +107,8 @@ names (T)            =  []
 names (Not p)        =  names p
 names (p :|: q)      =  nub (names p ++ names q)
 names (p :&: q)      =  nub (names p ++ names q)
+names (p :->: q)     =  nub (names p ++ names q)
+names (p :<->: q)    =  nub (names p ++ names q)
 
 -- creates all possible truth assignments for a set of variables
 envs :: Names -> [Env]
@@ -109,14 +124,40 @@ satisfiable p  =  or [ eval e p | e <- envs (names p) ]
 -- Exercises ------------------------------------------------------------
 
 -- 4.
-p1 = undefined
-p2 = undefined
-p3 = undefined
+p1, p2, p3 :: Prop
+p1 = ((Var "P" :|: Var "Q") :&: (Var "P" :&: Var "Q"))
+p2 = ((Var "P" :|: Var "Q") :&: ((Not (Var "P")) :&: (Not (Var "Q"))))
+p3 = (
+        (
+            (Var "P")
+            :&:
+            (
+                (Var "Q")
+                :|:
+                (Var "R")
+            )
+        )
+        :&:
+        (
+            (
+                (Not (Var "P"))
+                :|:
+                (Not (Var "Q"))
+            )
+            :|:
+            (
+                (Not (Var "P"))
+                :|:
+                (Not (Var "R"))
+            )
+        )
+    )
 
 
 -- 5.
 tautology :: Prop -> Bool
-tautology = undefined
+tautology prop = and [result | result <- results]
+        where results = map (\x -> eval x prop) (envs $ names prop)
 
 prop_taut1 :: Prop -> Bool
 prop_taut1 = undefined
@@ -126,20 +167,56 @@ prop_taut2 = undefined
 
 
 -- 6.
-p4 = undefined
-p5 = undefined
-p6 = undefined
+p4 =
+    (
+        ((Var "P") :->: (Var "Q"))
+        :&:
+        ((Var "P") :<->: (Var "Q"))
+    )
+p5 =
+    (
+        ((Var "P") :->: (Var "Q"))
+        :&:
+        (
+            (Var "P")
+            :&:
+            (Not (Var "Q"))
+        )
+    )
+p6 =
+    (
+        (
+            ((Var "P") :<->: (Var "Q"))
+            :&:
+            (
+                (Var "P")
+                :&:
+                (Not (Var "Q"))
+            )
+        )
+        :|:
+        (
+            (Not (Var "P"))
+            :&:
+            (Var "Q")
+        )
+    )
+
+
 
 
 -- 7.
 equivalent :: Prop -> Prop -> Bool
-equivalent = undefined
+equivalent p1 p2 = tautology (p1 :<->: p2)
 
 equivalent' :: Prop -> Prop -> Bool
-equivalent' = undefined
+equivalent' p1 p2 = (and [x == y | (x,y) <- zip resP1 resP2])
+    where
+        resP1 = map (\x -> eval x p1) (envs $ names p1)
+        resP2 = map (\x -> eval x p2) (envs $ names p2)
 
 prop_equivalent :: Prop -> Prop -> Bool
-prop_equivalent = undefined
+prop_equivalent p1 p2 = equivalent p1 p2 == equivalent' p1 p2
 
 
 -- 8.
@@ -217,8 +294,8 @@ instance Arbitrary Prop where
                                        , liftM Not subform
                                        , liftM2 (:|:) subform subform
                                        , liftM2 (:&:) subform subform
-                                     --  , liftM2 (:->:) subform subform
-                                     --  , liftM2 (:<->:) subform' subform'
+                                       , liftM2 (:->:) subform subform
+                                       , liftM2 (:<->:) subform' subform'
                                        ]
                  where
                    atom = oneof [liftM Var (elements ["P", "Q", "R", "S"]),
