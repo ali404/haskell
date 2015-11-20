@@ -10,10 +10,12 @@ import Test.QuickCheck
 -- Exercise 1
 
 -- 1a. split
+-- this is not good, rewrite
 split :: Command -> [Command]
 split (Sit :#: cmd2) = split cmd2
 split (cmd1 :#: cmd2) = [cmd1] ++ split cmd2
 split cmd1 = [cmd1]
+split [] = []
 
 -- 1b. join
 join :: [Command] -> Command
@@ -26,6 +28,7 @@ equivalent c1 c2 = split c1 == split c2
 prop_split_join :: Command -> Bool
 prop_split_join cmd = equivalent (join (split cmd)) cmd
 
+-- rewrite
 prop_split :: Command -> Bool
 prop_split cmd = elem Sit cmdList
   where
@@ -48,6 +51,8 @@ polygon size turns = copy turns (Go size :#: Turn (fromIntegral (div 360 turns))
 
 -- Exercise 3
 -- spiral
+--what if side is lower than 0 ?
+--rewrite!
 spiral :: Distance -> Int -> Distance -> Angle -> Command
 spiral side 1 step angle = Go side :#: Turn angle
 spiral side n step angle
@@ -57,6 +62,7 @@ spiral side n step angle
 
 -- Exercise 4
 -- optimise
+-- rewrite !
 optimise :: Command -> Command
 optimise (Go x :#: Go y :#: cmds) = optimise (Go (x+y) :#: cmds)
 optimise (Go 0 :#: cmds) = optimise cmds
