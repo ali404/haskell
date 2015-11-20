@@ -125,14 +125,17 @@ prop_merge fT sT = firstPass && secondPass && thirdPass
 del :: Ord k => k -> Keymap k a -> Keymap k a
 del _ Leaf = Leaf
 del deletedKey (Node k v left right)
-    | deletedKey < k = del deletedKey left
-    | deletedKey > k = del deletedKey right
+    | deletedKey < k = (Node k v (del deletedKey left) right)
+    | deletedKey > k = (Node k v left (del deletedKey right))
     | otherwise = merge left right
 
 -- Exercise 15
 
 select :: Ord k => (a -> Bool) -> Keymap k a -> Keymap k a
-select = undefined
+select restriction tree = fromList $ selectToList restriction tree
+    where
+        selectToList :: Ord k => (a -> Bool) -> Keymap k a -> [(k, a)]
+        selectToList restriction tree = filter (\(x,y) -> restriction y) (toList tree)
 
 -- Instances for QuickCheck -----------------------------
 instance (Ord k, Show k, Show a) => Show (Keymap k a) where
