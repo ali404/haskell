@@ -9,7 +9,7 @@ import Data.List
 
 -- Importing the keymap module
 
-import KeymapList
+import KeymapTree
 
 
 -- Type declarations
@@ -32,7 +32,7 @@ testDB = fromList [
  ("9780201342758", ("Thompson - \"Haskell: The Craft of Functional Programming\"", "Book")),
  ("0042400212509", ("Universal deep-frying pan", "pc"))
  ]
- 
+
 
 -- Exercise 1
 
@@ -40,7 +40,7 @@ longestProductLen :: [(Barcode, Item)] -> Int
 longestProductLen pairs = maximum $ map (\x -> length $ fst $ snd x ) pairs
 
 formatLine :: Int -> (Barcode, Item) -> String
-formatLine maxLen pair = barcode ++ replicate (maxLen - barcodeLen + 1) '.' ++ product ++ replicate (maxLen - productLen + 1) '.' ++ unit 
+formatLine maxLen pair = barcode ++ replicate (maxLen - barcodeLen + 1) '.' ++ product ++ replicate (maxLen - productLen + 1) '.' ++ unit
                        where barcode = fst pair
                              product = fst $ snd pair
                              unit = snd $ snd pair
@@ -54,9 +54,8 @@ showCatalogue catalogue =foldl (\x y -> x++"\n"++y) "" $ map (formatLine maxLen)
 
 -- Exercise 2
 maybeToList :: Maybe a -> [a]
-maybeToList maybeEntry 
-   | maybeEntry == Nothing = []
-   | otherwise = [Just maybeEntry]
+maybeToList Nothing = []
+maybeToList (Just a) = [a]
 
 listToMaybe :: (Eq a) => [a] -> Maybe a
 listToMaybe list
@@ -64,12 +63,14 @@ listToMaybe list
    | otherwise = Just (head list)
 
 catMaybes :: [Maybe a] -> [a]
-catMaybes = undefined
+catMaybes (x:as) = maybeToList x ++ catMaybes as
+catMaybes [] = []
 
 -- Exercise 3
 
 getItems :: [Barcode] -> Catalogue -> [Item]
-getItems = undefined
+getItems barcodes catalogue = catMaybes $ map (\barcode -> lookup barcode catList) barcodes
+                            where catList = toList catalogue
 
 
 
