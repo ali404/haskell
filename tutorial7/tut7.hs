@@ -1,4 +1,4 @@
--- Informatics 1 - Functional Programming 
+-- Informatics 1 - Functional Programming
 -- Tutorial 7
 --
 -- Week 9 - Due: 19/20 Nov.
@@ -67,4 +67,3 @@ snowflake = undefined
 -- 7. hilbert
 hilbert :: Int -> Command
 hilbert = undefined
-
