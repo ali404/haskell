@@ -1,4 +1,4 @@
--- Informatics 1 - Functional Programming 
+-- Informatics 1 - Functional Programming
 -- Tutorial 8
 --
 -- Week 11 - due: 3/4 Dec.
@@ -37,7 +37,7 @@ m2 = (['A','B','C','D'],
        ('C', '0', 'B'), ('C', '1', 'D'),
        ('D', '0', 'D'), ('D', '1', 'D')])
 
-dm1 :: FSM [Int] 
+dm1 :: FSM [Int]
 dm1 =  ([[],[0],[1,2],[3],[3,4],[4]],
         ['a','b'],
         [0],
@@ -65,46 +65,57 @@ final  :: FSM q -> [q]
 trans  :: FSM q -> [Transition q]
 
 
-states = undefined
-alph   = undefined
-start  = undefined
-final  = undefined
-trans  = undefined
+states (u, a, s, f, t) = u
+alph   (u, a, s, f, t) = a
+start  (u, a, s, f, t) = s
+final  (u, a, s, f, t) = f
+trans  (u, a, s, f, t) = t
 
 
 -- 2.
 delta :: (Eq q) => FSM q -> q -> Char -> [q]
-delta = undefined
+delta (_, _, _, _, []) _ _ = []
+delta (u, a, s, f, ((q1, symb, q2):t)) sourceState symbol
+    | q1 == sourceState && symb == symbol = [q2] ++ delta (u, a, s, f, t) sourceState symbol
+    | otherwise = delta (u, a, s, f, t) sourceState symbol
 
 
 -- 3.
 accepts :: (Eq q) => FSM q -> String -> Bool
-accepts = undefined
+accepts m xs = acceptsFrom m (start m) xs
 
+acceptsFrom :: (Eq q) => FSM q -> q -> String -> Bool
+acceptsFrom m q [] = q `elem` final m
+acceptsFrom m q (x:xs) = foldl (||) False $ map (\y -> acceptsFrom m y xs) (delta m q x)
 
 -- 4.
 canonical :: (Ord q) => [q] -> [q]
-canonical = undefined
+canonical list = nub $ sort list
 
 
 -- 5.
 ddelta :: (Ord q) => FSM q -> [q] -> Char -> [q]
-ddelta = undefined
+ddelta fsm superstates symbol = canonical.concat $ map (\x -> delta fsm x symbol) superstates
 
 
 -- 6.
 next :: (Ord q) => FSM q -> [[q]] -> [[q]]
-next = undefined
+next fsm listOfSuperstates = canonical $ listOfSuperstates ++ [ddelta fsm superstate symbol | superstate <- listOfSuperstates, symbol <- alph fsm]
 
 
 -- 7.
 reachable :: (Ord q) => FSM q -> [[q]] -> [[q]]
-reachable = undefined
+reachable fsm s1
+    | s1 == next fsm s1 = s1
+    | otherwise = reachable fsm $ next fsm s1
 
 
 -- 8.
 dfinal :: (Ord q) => FSM q -> [[q]] -> [[q]]
-dfinal = undefined
+dfinal fsm superstates = filter (containsFinal fsm) superstates
+
+containsFinal :: (Ord q) => FSM q -> [q] -> Bool
+containsFinal fsm superstate = foldl (||) False $ map (\x -> x `elem` final fsm) superstate
 
 
 -- 9.
@@ -145,7 +156,7 @@ prop_complement n m = (n' == m')
 -- 13.
 unionFSM :: (Ord q) => FSM q -> FSM q -> FSM (q,q)
 unionFSM a b = undefined
-        
+
 prop_union n m l =  accepts (unionFSM (aut n') (aut m')) l' == (accepts (aut n') l' || accepts (aut m') l') &&
                     accepts (unionFSM (aut n') (aut m')) n' && accepts (unionFSM (aut n') (aut m')) m'
                     where m' = safeString m
@@ -154,7 +165,7 @@ prop_union n m l =  accepts (unionFSM (aut n') (aut m')) l' == (accepts (aut n')
 -- 14.
 intersectFSM :: (Ord q) => FSM q -> FSM q -> FSM (q,q)
 intersectFSM a b = undefined
-                
+
 prop_intersect n m l = accepts (intersectFSM (aut n') (aut m')) l' == (accepts (aut n') l' && accepts (aut m') l')
                     where m' = safeString m
                           n' = safeString n
@@ -165,7 +176,7 @@ intFSM :: Ord q => FSM q -> FSM Int
 intFSM a = undefined
 
 
-prop_intFSM a b = intFSM (aut a') `accepts` b' == (aut a') `accepts` b' && 
+prop_intFSM a b = intFSM (aut a') `accepts` b' == (aut a') `accepts` b' &&
                   (intFSM (complement (aut a')) `accepts` b' == (complement (aut a') `accepts` b'))
   where a' = safeString a
         b' = safeString b
@@ -182,7 +193,7 @@ prop_concat n m l = accepts (concatFSM (aut n') (aut m')) (n'++m') &&
 -- 16.
 star :: (Ord q) => FSM q -> FSM q
 star a = undefined
-         
+
 prop_star a n = (star $ aut a') `accepts` (concat [a' | x <- [0..n]]) &&
                 (star $ aut a') `accepts` ""
       where a' = safeString a
@@ -196,5 +207,3 @@ prop2 a b = ((aut a') `intersectFSM` (intFSM ((aut b') `unionFSM` (aut a')))) `a
              where a' = safeString a
                    b' = safeString b
 deterministic = undefined
-
-
