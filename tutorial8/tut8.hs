@@ -120,11 +120,18 @@ containsFinal fsm superstate = foldl (||) False $ map (\x -> x `elem` final fsm)
 
 -- 9.
 dtrans :: (Ord q) => FSM q -> [[q]] -> [Transition [q]]
-dtrans = undefined
+dtrans fsm superstates = [(superstate, symbol, ddelta fsm superstate symbol) | superstate <- superstates, symbol <- alph fsm ]
 
 
 -- 10.
 deterministic :: (Ord q) => FSM q -> FSM [q]
+deterministic nfsm = (u, a, s, f, t)
+    where
+    u = reachable nfsm [[start nfsm]]
+    a = alph nfsm
+    s = [start nfsm]
+    f = dfinal nfsm u
+    t = dtrans nfsm u
 
 
 -- Optional Material
@@ -206,4 +213,3 @@ prop1 a b = star ((aut a') `unionFSM` (aut b')) `accepts` (a'++b'++a'++a')
 prop2 a b = ((aut a') `intersectFSM` (intFSM ((aut b') `unionFSM` (aut a')))) `accepts` a'
              where a' = safeString a
                    b' = safeString b
-deterministic = undefined
