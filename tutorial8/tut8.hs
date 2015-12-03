@@ -137,7 +137,15 @@ deterministic nfsm = (u, a, s, f, t)
 -- Optional Material
 --11.
 aut :: String -> FSM Int
-aut str = undefined
+aut str = fsm
+    where
+    u = [0..length str]
+    a = ['a'..'z']
+    s = 0
+    f = [length str]
+    lengthZip = zip [0..] str
+    t = [(fst element, snd element, (fst element) + 1)| element <- lengthZip]
+    fsm = (u, a, s, f, t)
 
 
 -- For quickCheck
