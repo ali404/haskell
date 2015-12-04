@@ -85,7 +85,7 @@ accepts :: (Eq q) => FSM q -> String -> Bool
 accepts m xs = acceptsFrom m (start m) xs
 
 acceptsFrom :: (Eq q) => FSM q -> q -> String -> Bool
-acceptsFrom m q [] = q `elem` final m
+acceptsFrom m q [] = q `elem` (final m)
 acceptsFrom m q (x:xs) = foldl (||) False $ map (\y -> acceptsFrom m y xs) (delta m q x)
 
 -- 4.
