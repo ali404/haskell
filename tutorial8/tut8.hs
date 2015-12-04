@@ -139,12 +139,30 @@ deterministic nfsm = (u, a, s, f, t)
 aut :: String -> FSM Int
 aut str = fsm
     where
-    u = [0..length str]
+    len = length str
+    u = [0..(len+1)]
     a = ['a'..'z']
     s = 0
-    f = [length str]
+    f = [len]
     lengthZip = zip [0..] str
-    t = [(fst element, snd element, (fst element) + 1)| element <- lengthZip]
+    blackhole = len + 1
+    t = charTrans ++ blackholeTrans
+    charTrans = [
+        (
+        state,
+        char,
+        if state < len
+            then
+                if str!!state == char
+                    then state + 1
+                    else blackhole
+            else
+                if state == len
+                    then blackhole
+                    else state
+        )
+        | state <- u, char <- a]
+    blackholeTrans = [(blackhole, char, blackhole) | char <- a]
     fsm = (u, a, s, f, t)
 
 
@@ -160,12 +178,19 @@ prop_aut2 n m = (m' == n') || (not $ accepts (aut n') m')
 
 -- 12.
 complement :: (Ord q) => FSM q -> FSM q
-complement m = undefined
+complement m = fsm
+    where
+    fsm = (u, a, s, f, t)
+    u = states m
+    a = alph m
+    s = start m
+    f = filter (\x -> not $ x `elem` final m) u
+    t = trans m
 
 prop_complement :: String -> String -> Bool
 prop_complement n m = (n' == m')
                       || accepts (complement $ aut n') m'
-                      && (not $ accepts (complement $ aut n') n)
+                      && (not $ accepts (complement $ aut n') n')
                       where n' = safeString n
                             m' = safeString m
 -- 13.
